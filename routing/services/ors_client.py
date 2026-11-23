@@ -38,8 +38,6 @@ def fetch_route(origin: Location, destination: Location) -> Route:
         "coordinates": [[origin.lon, origin.lat], [destination.lon, destination.lat]],
         "instructions": False,
         "elevation": False,
-        # City centroids are not always on a road: let ORS snap to the nearest one.
-        "radiuses": [-1, -1],
         # Keep US -> US trips inside the US (e.g. Detroit -> Buffalo via Ontario).
         "options": {"avoid_borders": "all"},
     }
@@ -64,7 +62,11 @@ def fetch_route(origin: Location, destination: Location) -> Route:
         code = err.get("code") if isinstance(err, dict) else None
         message = err.get("message") if isinstance(err, dict) else str(err)
         if code in _NO_ROUTE_CODES:
-            raise NoRouteError(f"No drivable route between these points: {message}", ors_code=code)
+            raise NoRouteError(
+                f"No drivable route between these points ({message}). "
+                "Try a nearby city or pass 'lat,lon' on a road.",
+                ors_code=code,
+            )
         raise RoutingServiceError(
             f"Routing service error (HTTP {resp.status_code}).", ors_code=code
         )

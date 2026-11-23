@@ -15,6 +15,7 @@ from pathlib import Path
 
 DATA_DIR = Path(__file__).resolve().parent.parent.parent / "data"
 PLACES_CSV = DATA_DIR / "us_places.csv"
+OVERRIDES_CSV = DATA_DIR / "place_overrides.csv"
 
 # 50 states + DC. Territories and Canadian provinces are handled separately.
 US_STATES = {
@@ -68,8 +69,16 @@ def normalize(name: str) -> str:
 class Place:
     name: str
     state: str
-    lat: float
+    lat: float  # Census internal point (used as a station's fallback location)
     lon: float
+    road_lat: float | None = None  # nearest truck-routable road (used for routing)
+    road_lon: float | None = None
+
+    @property
+    def route_point(self) -> tuple[float, float]:
+        if self.road_lat is not None:
+            return self.road_lat, self.road_lon
+        return self.lat, self.lon
 
 
 @lru_cache(maxsize=1)
@@ -78,13 +87,21 @@ def _index() -> tuple[dict[tuple[str, str], Place], dict[str, list[Place]]]:
     by_name: dict[str, list[Place]] = {}
     with open(PLACES_CSV, encoding="utf-8") as f:
         for r in csv.DictReader(f):
-            p = Place(r["name"], r["state"], float(r["lat"]), float(r["lon"]))
+            road = (float(r["road_lat"]), float(r["road_lon"])) if r.get("road_lat") else (None, None)
+            p = Place(r["name"], r["state"], float(r["lat"]), float(r["lon"]), *road)
             key = (normalize(p.name), p.state)
             # Prefer a Census "place" over a county subdivision; among equals,
             # keep the larger one (a city over a same-named CDP).
             rank = (1 if r["source"] == "place" else 0, float(r["land_sqmi"] or 0))
             if key not in by_key or rank > by_key[key][0]:
                 by_key[key] = (rank, p)
+    with open(OVERRIDES_CSV, encoding="utf-8") as f:
+        for r in csv.DictReader(f):
+            key = (normalize(r["name"]), r["state"])
+            if key in by_key:
+                old = by_key[key][1]
+                by_key[key] = (by_key[key][0], Place(old.name, old.state, old.lat, old.lon,
+                                                     float(r["lat"]), float(r["lon"])))
     for (n, _), (_, p) in by_key.items():
         by_name.setdefault(n, []).append(p)
     return {k: v[1] for k, v in by_key.items()}, by_name

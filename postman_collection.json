@@ -1,0 +1,20 @@
+{
+  "info": {
+    "name": "Fuel Route Planner",
+    "description": "Cheapest fuel stops between two US locations. Set the baseUrl variable (default http://127.0.0.1:8000).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [{"key": "baseUrl", "value": "http://127.0.0.1:8000"}],
+  "item": [
+    {"name": "1. New York -> Los Angeles (full tank)", "request": {"method": "POST", "header": [{"key": "Content-Type", "value": "application/json"}], "url": "{{baseUrl}}/api/route/", "body": {"mode": "raw", "raw": "{\n  \"start\": \"New York, NY\",\n  \"finish\": \"Los Angeles, CA\"\n}"}}},
+    {"name": "2. Same trip again (served from cache)", "request": {"method": "POST", "header": [{"key": "Content-Type", "value": "application/json"}], "url": "{{baseUrl}}/api/route/", "body": {"mode": "raw", "raw": "{\n  \"start\": \"New York, NY\",\n  \"finish\": \"Los Angeles, CA\"\n}"}}},
+    {"name": "3. Chicago -> Houston, starting with 10 gallons", "request": {"method": "POST", "header": [{"key": "Content-Type", "value": "application/json"}], "url": "{{baseUrl}}/api/route/", "body": {"mode": "raw", "raw": "{\n  \"start\": \"Chicago, IL\",\n  \"finish\": \"Houston, TX\",\n  \"initial_fuel_gallons\": 10\n}"}}},
+    {"name": "4. Miami -> Seattle (coast to coast)", "request": {"method": "POST", "header": [{"key": "Content-Type", "value": "application/json"}], "url": "{{baseUrl}}/api/route/", "body": {"mode": "raw", "raw": "{\n  \"start\": \"Miami, FL\",\n  \"finish\": \"Seattle, WA\"\n}"}}},
+    {"name": "5. Short trip, no stop needed (Dallas -> Austin)", "request": {"method": "POST", "header": [{"key": "Content-Type", "value": "application/json"}], "url": "{{baseUrl}}/api/route/", "body": {"mode": "raw", "raw": "{\n  \"start\": \"Dallas, TX\",\n  \"finish\": \"Austin, TX\"\n}"}}},
+    {"name": "6. Lat/lon input", "request": {"method": "POST", "header": [{"key": "Content-Type", "value": "application/json"}], "url": "{{baseUrl}}/api/route/", "body": {"mode": "raw", "raw": "{\n  \"start\": \"39.7392,-104.9903\",\n  \"finish\": \"41.8781,-87.6298\"\n}"}}},
+    {"name": "7. Error: ambiguous city (no state)", "request": {"method": "POST", "header": [{"key": "Content-Type", "value": "application/json"}], "url": "{{baseUrl}}/api/route/", "body": {"mode": "raw", "raw": "{\n  \"start\": \"Springfield\",\n  \"finish\": \"Denver, CO\"\n}"}}},
+    {"name": "8. Error: Alaska is not road-connected inside the US", "request": {"method": "POST", "header": [{"key": "Content-Type", "value": "application/json"}], "url": "{{baseUrl}}/api/route/", "body": {"mode": "raw", "raw": "{\n  \"start\": \"Anchorage, AK\",\n  \"finish\": \"Seattle, WA\"\n}"}}},
+    {"name": "9. Error: dataset gap (San Francisco -> Seattle)", "request": {"method": "POST", "header": [{"key": "Content-Type", "value": "application/json"}], "url": "{{baseUrl}}/api/route/", "body": {"mode": "raw", "raw": "{\n  \"start\": \"San Francisco, CA\",\n  \"finish\": \"Seattle, WA\"\n}"}}},
+    {"name": "10. Map page", "request": {"method": "GET", "url": {"raw": "{{baseUrl}}/map/?start=New York, NY&finish=Los Angeles, CA", "host": ["{{baseUrl}}"], "path": ["map", ""], "query": [{"key": "start", "value": "New York, NY"}, {"key": "finish", "value": "Los Angeles, CA"}]}}}
+  ]
+}

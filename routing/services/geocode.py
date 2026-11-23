@@ -75,4 +75,5 @@ def resolve(query: str) -> Location:
             f"'{city}, {state}' was not found in the US Census place list.",
             **({"did_you_mean": others[:20]} if others else {}),
         )
-    return Location(query, f"{place.name}, {place.state}", place.lat, place.lon)
+    lat, lon = place.route_point
+    return Location(query, f"{place.name}, {place.state}", lat, lon)

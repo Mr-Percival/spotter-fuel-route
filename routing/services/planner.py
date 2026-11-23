@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import copy
 import hashlib
 import time
 from urllib.parse import urlencode
@@ -47,11 +46,14 @@ def plan_trip(start: str, finish: str, initial_fuel_gallons: float | None = None
     ).hexdigest()
     cached = cache.get(key)
     if cached is not None:
-        result = copy.deepcopy(cached)
-        result["origin"]["query"], result["destination"]["query"] = start, finish
-        result["meta"].update(cache="hit", routing_api_calls=0,
-                              timings_ms={"total": timer.total()})
-        return result
+        # Shallow copy: the (large) route geometry is shared, only small parts change.
+        return {
+            **cached,
+            "origin": {**cached["origin"], "query": start},
+            "destination": {**cached["destination"], "query": finish},
+            "meta": {**cached["meta"], "cache": "hit", "routing_api_calls": 0,
+                     "timings_ms": {"total": timer.total()}},
+        }
 
     route = ors_client.fetch_route(origin, destination)
     timer.lap("routing")

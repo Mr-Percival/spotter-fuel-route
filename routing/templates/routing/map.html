@@ -82,8 +82,11 @@ dt{color:var(--muted)} dd{margin:0;font-family:"IBM Plex Mono",monospace}
 <script>
 const R = JSON.parse(document.getElementById("plan").textContent);
 const map = L.map("map", {zoomControl:true});
-L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
-  {maxZoom:18, attribution:"&copy; OpenStreetMap contributors"}).addTo(map);
+// OSM's tile policy requires a Referer; Django's default Referrer-Policy (same-origin)
+// strips it from cross-origin requests, so ask for it explicitly on the tiles.
+L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+  {maxZoom:19, referrerPolicy:"strict-origin-when-cross-origin",
+   attribution:'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'}).addTo(map);
 if (!R) { map.setView([39.5,-98.35],4); document.querySelectorAll("aside h1,aside h2,#trip,#kpis,#stops,#assumptions,#perf").forEach(e=>e.style.display="none"); throw "no plan"; }
 const $ = id => document.getElementById(id);
 const usd = n => n.toLocaleString("en-US",{style:"currency",currency:"USD"});
