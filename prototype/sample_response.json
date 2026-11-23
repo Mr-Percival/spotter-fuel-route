@@ -1,0 +1,262 @@
+{
+  "origin": {
+    "query": "New York, NY",
+    "lat": 40.71,
+    "lon": -74.01
+  },
+  "destination": {
+    "query": "Los Angeles, CA",
+    "lat": 34.05,
+    "lon": -118.24
+  },
+  "distance_miles": 2841.2,
+  "duration_hours": 45.8,
+  "assumptions": {
+    "tank_gallons": 50,
+    "mpg": 10,
+    "max_range_miles": 500,
+    "initial_fuel_gallons": 50,
+    "corridor_miles": 10,
+    "price_rule": "lowest retail price per OPIS station id",
+    "detour_cost": "ignored (stations within the corridor)"
+  },
+  "summary": {
+    "total_cost": 706.33,
+    "gallons_purchased": 234.12,
+    "stops": 9,
+    "avg_price_paid": 3.017,
+    "savings_vs_naive": 13.58
+  },
+  "fuel_stops": [
+    {
+      "sequence": 1,
+      "opis_id": 2926,
+      "name": "EXIT 77 TRAVEL PLAZA",
+      "address": "I-81, EXIT 77 & SR-39",
+      "city": "Harrisburg",
+      "state": "PA",
+      "lat": 40.27,
+      "lon": -76.88,
+      "off_route_miles": 0.8,
+      "geo_precision": "city",
+      "mile": 172.3,
+      "price_per_gallon": 3.499,
+      "gallons": 3.79,
+      "cost": 13.26
+    },
+    {
+      "sequence": 2,
+      "opis_id": 70717,
+      "name": "Certified Oil #400491",
+      "address": "I-270 EXIT 52",
+      "city": "Columbus",
+      "state": "OH",
+      "lat": 39.96,
+      "lon": -83.0,
+      "off_route_miles": 0.8,
+      "geo_precision": "city",
+      "mile": 537.9,
+      "price_per_gallon": 3.202,
+      "gallons": 18.83,
+      "cost": 60.3
+    },
+    {
+      "sequence": 3,
+      "opis_id": 72755,
+      "name": "RACETRAC #2620",
+      "address": "I-465 Exit 42",
+      "city": "Indianapolis",
+      "state": "IN",
+      "lat": 39.77,
+      "lon": -86.16,
+      "off_route_miles": 0.8,
+      "geo_precision": "city",
+      "mile": 726.2,
+      "price_per_gallon": 3.159,
+      "gallons": 25.78,
+      "cost": 81.44
+    },
+    {
+      "sequence": 4,
+      "opis_id": 2231,
+      "name": "QUIKTRIP #605",
+      "address": "I-270, EXIT 33",
+      "city": "Saint Louis",
+      "state": "MO",
+      "lat": 38.63,
+      "lon": -90.2,
+      "off_route_miles": 0.8,
+      "geo_precision": "city",
+      "mile": 984.0,
+      "price_per_gallon": 2.899,
+      "gallons": 50.0,
+      "cost": 144.95
+    },
+    {
+      "sequence": 5,
+      "opis_id": 64112,
+      "name": "RAPID ROBERTS #123",
+      "address": "I-44, EXIT 80",
+      "city": "Springfield",
+      "state": "MO",
+      "lat": 37.21,
+      "lon": -93.29,
+      "off_route_miles": 0.8,
+      "geo_precision": "city",
+      "mile": 1202.3,
+      "price_per_gallon": 2.899,
+      "gallons": 1.43,
+      "cost": 4.15
+    },
+    {
+      "sequence": 6,
+      "opis_id": 3383,
+      "name": "E-Express at Central Truck Stop",
+      "address": "I-35, EXIT 137",
+      "city": "Oklahoma City",
+      "state": "OK",
+      "lat": 35.47,
+      "lon": -97.52,
+      "off_route_miles": 0.8,
+      "geo_precision": "city",
+      "mile": 1498.3,
+      "price_per_gallon": 2.879,
+      "gallons": 27.27,
+      "cost": 78.51
+    },
+    {
+      "sequence": 7,
+      "opis_id": 72816,
+      "name": "QUIKTRIP #7914",
+      "address": "I-27 EXIT 117",
+      "city": "Amarillo",
+      "state": "TX",
+      "lat": 35.22,
+      "lon": -101.83,
+      "off_route_miles": 0.8,
+      "geo_precision": "city",
+      "mile": 1771.0,
+      "price_per_gallon": 2.846,
+      "gallons": 50.0,
+      "cost": 142.28
+    },
+    {
+      "sequence": 8,
+      "opis_id": 66678,
+      "name": "NKS ROYAL TRUCKSTOP",
+      "address": "I-40, EXIT 16",
+      "city": "Gallup",
+      "state": "NM",
+      "lat": 35.53,
+      "lon": -108.74,
+      "off_route_miles": 0.8,
+      "geo_precision": "city",
+      "mile": 2212.7,
+      "price_per_gallon": 3.119,
+      "gallons": 44.17,
+      "cost": 137.77
+    },
+    {
+      "sequence": 9,
+      "opis_id": 5419,
+      "name": "USA TRAVEL CENTER",
+      "address": "I-40, EXIT 48 & US-93",
+      "city": "Kingman",
+      "state": "AZ",
+      "lat": 35.19,
+      "lon": -114.05,
+      "off_route_miles": 0.8,
+      "geo_precision": "city",
+      "mile": 2549.8,
+      "price_per_gallon": 3.399,
+      "gallons": 12.85,
+      "cost": 43.68
+    }
+  ],
+  "route": {
+    "type": "Feature",
+    "properties": {},
+    "geometry": {
+      "type": "LineString",
+      "coordinates": [
+        [
+          -74.01,
+          40.71
+        ],
+        [
+          -76.88,
+          40.27
+        ],
+        [
+          -79.99,
+          40.44
+        ],
+        [
+          -83.0,
+          39.96
+        ],
+        [
+          -86.16,
+          39.77
+        ],
+        [
+          -90.2,
+          38.63
+        ],
+        [
+          -93.29,
+          37.21
+        ],
+        [
+          -95.99,
+          36.15
+        ],
+        [
+          -97.52,
+          35.47
+        ],
+        [
+          -101.83,
+          35.22
+        ],
+        [
+          -106.65,
+          35.08
+        ],
+        [
+          -108.74,
+          35.53
+        ],
+        [
+          -111.65,
+          35.2
+        ],
+        [
+          -114.05,
+          35.19
+        ],
+        [
+          -117.02,
+          34.9
+        ],
+        [
+          -118.24,
+          34.05
+        ]
+      ]
+    }
+  },
+  "map_url": "/map/?start=New+York%2C+NY&finish=Los+Angeles%2C+CA",
+  "meta": {
+    "routing_api_calls": 1,
+    "cache": "miss",
+    "timings_ms": {
+      "geocode": 0.2,
+      "routing": 840.0,
+      "corridor": 14.1,
+      "optimize": 0.3,
+      "total": 858.4
+    }
+  },
+  "warnings": []
+}
