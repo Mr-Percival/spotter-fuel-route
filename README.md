@@ -37,7 +37,7 @@ Then:
 
 - **API:** `POST http://127.0.0.1:8000/api/route/`. The Postman collection is in `postman_collection.json`.
 - **Map:** http://127.0.0.1:8000/map/?start=New%20York,%20NY&finish=Los%20Angeles,%20CA
-- **Tests:** `pytest` runs 956 tests in about 20 s with the routing API mocked:
+- **Tests:** `pytest` runs 956 tests in a few seconds (≈3 s on CI) with the routing API mocked:
   - 20 API tests, 22 geocoding, 4 corridor, 4 data;
   - the optimiser checked against exact solutions on 800 random instances.
 
