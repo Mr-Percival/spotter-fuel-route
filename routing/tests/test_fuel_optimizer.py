@@ -131,3 +131,91 @@ def test_empty_tank_without_station_at_origin_is_infeasible():
     with pytest.raises(InfeasibleRouteError) as exc:
         plan_fuel_stops([RouteStation(30, 3.0)], 800, initial_gallons=0)
     assert exc.value.gap_start_mile == 0
+
+
+# --- Stop cost + detour: exact DP over (stop, arrival state) -----------------
+
+from routing.services.fuel_optimizer import plan_fuel_stops_with_stop_cost  # noqa: E402
+
+
+def exact_min_cost_with_stops(stations, total, tank, initial, stop_cost):
+    """Brute force over integer fuel levels (mpg = 1), charging a fixed cost and
+    the round-trip detour fuel whenever a station sells anything."""
+    nodes = sorted(stations, key=lambda s: s.mile)
+    first_leg = nodes[0].mile if nodes else total
+    if initial < first_leg:
+        return math.inf
+    if initial >= total:
+        return 0.0
+    arrival = {initial - first_leg: 0.0}
+    for k, st in enumerate(nodes):
+        d = (nodes[k + 1].mile if k + 1 < len(nodes) else total) - st.mile
+        fixed = stop_cost + 2 * st.off_route_miles * st.price
+        nxt = {}
+        for f, cost in arrival.items():
+            for g in range(f, tank + 1):
+                if g < d:
+                    continue
+                c = cost + (g - f) * st.price + (fixed if g > f else 0.0)
+                if c < nxt.get(g - d, math.inf):
+                    nxt[g - d] = c
+        if not nxt:
+            return math.inf
+        arrival = nxt
+    return min(arrival.values())
+
+
+def _random_instance(seed):
+    rng = random.Random(seed)
+    tank = rng.randint(3, 10)
+    total = rng.randint(tank + 1, tank * 5)
+    miles = [rng.randint(0, total) for _ in range(rng.randint(0, 3))]
+    m = rng.randint(0, tank)
+    while m < total:
+        miles.append(m)
+        m += rng.randint(1, tank)
+    stations = [
+        RouteStation(mile=m, price=round(rng.uniform(2.5, 5.0), 3), station_id=k,
+                     off_route_miles=rng.choice([0, 0, 0.5, 1.5]))
+        for k, m in enumerate(miles)
+    ]
+    return rng, tank, total, stations, rng.randint(0, tank)
+
+
+@pytest.mark.parametrize("seed", range(300))
+def test_stop_cost_dp_matches_brute_force(seed):
+    rng, tank, total, stations, initial = _random_instance(seed)
+    stop_cost = rng.choice([0.0, 1.0, 5.0, 25.0])
+    expected = exact_min_cost_with_stops(stations, total, tank, initial, stop_cost)
+    if math.isinf(expected):
+        with pytest.raises(InfeasibleRouteError):
+            plan_fuel_stops_with_stop_cost(stations, total, tank_gallons=tank, mpg=1,
+                                           initial_gallons=initial, stop_cost=stop_cost)
+        return
+    plan = plan_fuel_stops_with_stop_cost(stations, total, tank_gallons=tank, mpg=1,
+                                          initial_gallons=initial, stop_cost=stop_cost)
+    assert plan.total_cost + plan.stop_penalty == pytest.approx(expected, abs=1e-6)
+    _simulate(plan, total, tank, 1)
+
+
+@pytest.mark.parametrize("seed", range(100))
+def test_zero_stop_cost_reduces_to_the_greedy(seed):
+    rng = random.Random(5000 + seed)
+    total = rng.uniform(100, 2500)
+    stations = [RouteStation(mile=rng.uniform(0, total), price=rng.uniform(2.7, 6.4), station_id=k)
+                for k in range(rng.randint(10, 80))]
+    try:
+        greedy = plan_fuel_stops(stations, total, initial_gallons=0 if seed % 2 else 50)
+    except InfeasibleRouteError:
+        return
+    dp = plan_fuel_stops_with_stop_cost(stations, total, initial_gallons=0 if seed % 2 else 50)
+    assert dp.total_cost == pytest.approx(greedy.total_cost, abs=1e-6)
+
+
+def test_stop_cost_avoids_tiny_top_ups():
+    # Free stops: buy 1 gallon at the cheap-ish station, then the rest further on.
+    stations = [RouteStation(0, 3.00, "a"), RouteStation(10, 3.01, "b"), RouteStation(400, 2.90, "c")]
+    free = plan_fuel_stops_with_stop_cost(stations, 800, initial_gallons=0)
+    costly = plan_fuel_stops_with_stop_cost(stations, 800, initial_gallons=0, stop_cost=25)
+    assert len(costly.stops) < len(free.stops) or len(free.stops) == 2
+    assert all(s.station.station_id != "b" for s in costly.stops)

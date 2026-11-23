@@ -61,9 +61,11 @@ dt{color:var(--muted)} dd{margin:0;font-family:"IBM Plex Mono",monospace}
 <body>
 <aside>
   <form class="q" method="get" action="">
-    <label>Start<input name="start" value="{{ start }}" placeholder="City, ST" required></label>
-    <label>Finish<input name="finish" value="{{ finish }}" placeholder="City, ST" required></label>
+    <label>Start<input name="start" value="{{ form.start }}" placeholder="City, ST" required></label>
+    <label>Finish<input name="finish" value="{{ form.finish }}" placeholder="City, ST" required></label>
     <button>Plan</button>
+    {% if form.initial_fuel_gallons %}<input type="hidden" name="initial_fuel_gallons" value="{{ form.initial_fuel_gallons }}">{% endif %}
+    {% if form.stop_cost_usd %}<input type="hidden" name="stop_cost_usd" value="{{ form.stop_cost_usd }}">{% endif %}
   </form>
   {% if error %}<div class="err">{{ error }}</div>{% endif %}
   <h1>Fuel plan</h1>
@@ -97,18 +99,20 @@ $("trip").innerHTML = `${esc(R.origin.resolved)} <span>→</span> ${esc(R.destin
 const s = R.summary;
 $("kpis").innerHTML = `
   <div class="kpi main"><small>Total fuel cost</small><b>${usd(s.total_cost)}</b>
-    ${s.savings_vs_naive != null ? `<small class="save">${usd(s.savings_vs_naive)} cheaper than filling up only when forced</small>`:""}</div>
+    ${s.savings_vs_naive > 0 ? `<small class="save">${usd(s.savings_vs_naive)} cheaper than filling up only when forced</small>`:""}</div>
   <div class="kpi"><small>Distance</small><b>${R.distance_miles.toLocaleString("en-US")} mi</b></div>
-  <div class="kpi"><small>Stops</small><b>${s.stops}</b></div>
-  <div class="kpi"><small>Gallons bought</small><b>${s.gallons_purchased}</b></div>
-  <div class="kpi"><small>Avg $/gal paid</small><b>${s.avg_price_paid.toFixed(3)}</b></div>`;
+  <div class="kpi"><small>Fuel stops</small><b>${s.stops}</b></div>
+  <div class="kpi"><small>Trip fuel</small><b>${s.trip_fuel_gallons} gal</b></div>
+  <div class="kpi"><small>Effective $/gal</small><b>${s.effective_price_per_gallon != null ? s.effective_price_per_gallon.toFixed(3) : "—"}</b></div>
+  ${s.origin_fuel && s.origin_fuel.cost > 0 ? `<div class="kpi main"><small>Fuel to reach the first station: ${s.origin_fuel.gallons} gal, ${usd(s.origin_fuel.cost)}</small>
+    <small>priced at ${esc(s.origin_fuel.priced_at)}</small></div>` : ""}`;
 
 const a = R.assumptions;
 $("assumptions").innerHTML = [
   `${a.mpg} mpg`, `${a.tank_gallons} gal tank · ${a.max_range_miles} mi range`,
-  `starts with ${a.initial_fuel_gallons} gal`, `corridor ±${a.corridor_miles} mi`,
-  a.price_rule, `detour cost ${a.detour_cost}`, ...(R.warnings||[])
-].map(t => `<span class="badge">${t}</span>`).join("");
+  `start: ${a.initial_fuel}`, `$${a.stop_cost_usd} per stop`, `corridor ±${a.corridor_miles} mi`,
+  a.detour, a.price_rule, ...(R.warnings||[])
+].map(t => `<span class="badge">${esc(t)}</span>`).join("");
 
 const t = R.meta.timings_ms;
 $("perf").innerHTML = `<dt>Routing API calls</dt><dd>${R.meta.routing_api_calls}</dd>` +

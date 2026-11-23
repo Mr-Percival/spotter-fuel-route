@@ -33,7 +33,6 @@ def test_city_without_state_is_ambiguous_and_lists_candidates():
     ("Anchorage, AK", "Canada"),
     ("Honolulu, HI", "no road connection"),
     ("San Juan, PR", "no road connection"),
-    ("21.30,-157.85", "outside the contiguous"),
 ])
 def test_us_places_without_a_road_link_are_unroutable_not_foreign(query, fragment):
     with pytest.raises(UnroutableLocationError) as exc:
@@ -50,3 +49,24 @@ def test_lat_lon_input():
 def test_invalid_locations(query):
     with pytest.raises(LocationError):
         resolve(query)
+
+
+@pytest.mark.parametrize("query", [
+    "21.30,-157.85",   # Honolulu
+    "43.65,-79.38",    # Toronto (inside the lower-48 bounding box)
+    "25.67,-100.31",   # Monterrey
+    "27.0,-90.0",      # Gulf of Mexico
+])
+def test_coordinates_outside_the_us_are_rejected(query):
+    with pytest.raises(LocationError):
+        resolve(query)
+
+
+def test_swapped_coordinates_get_a_hint():
+    with pytest.raises(LocationError) as exc:
+        resolve("-74.01,40.71")
+    assert "swap" in exc.value.message
+
+
+def test_remote_but_real_us_coordinates_are_accepted():
+    assert "NV" in resolve("39.3,-117.4").label  # central Nevada, US-50

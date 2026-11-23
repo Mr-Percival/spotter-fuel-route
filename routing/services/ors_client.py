@@ -19,7 +19,8 @@ METERS_PER_MILE = 1609.344
 
 # ORS error codes that mean "this trip cannot be routed", not "ORS is down".
 # https://giscience.github.io/openrouteservice/api-reference/error-codes
-_NO_ROUTE_CODES = {2004, 2009, 2010, 2099}
+_NO_ROUTE_CODES = {2009, 2010, 2099}
+_LIMIT_EXCEEDED = 2004  # e.g. route longer than the server allows
 
 
 @dataclass(frozen=True)
@@ -61,6 +62,9 @@ def fetch_route(origin: Location, destination: Location) -> Route:
         err = (payload or {}).get("error", {})
         code = err.get("code") if isinstance(err, dict) else None
         message = err.get("message") if isinstance(err, dict) else str(err)
+        if code == _LIMIT_EXCEEDED:
+            raise NoRouteError(f"The routing service rejected this trip as too long or complex ({message}).",
+                               ors_code=code)
         if code in _NO_ROUTE_CODES:
             raise NoRouteError(
                 f"No drivable route between these points ({message}). "

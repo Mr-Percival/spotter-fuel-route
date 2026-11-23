@@ -26,7 +26,7 @@ def test_station_mile_marker_and_corridor_filter():
     found = stations_along_route(coords, idx, corridor_miles=10)
     assert [s.station_id for s in found] == [1, 2]
     assert found[0].mile == pytest.approx(56.6, abs=1.5)
-    assert found[0].payload["off_route_miles"] == pytest.approx(3.5, abs=0.6)
+    assert found[0].off_route_miles == pytest.approx(3.5, abs=0.6)
 
 
 def test_route_rescaled_to_reported_road_distance():

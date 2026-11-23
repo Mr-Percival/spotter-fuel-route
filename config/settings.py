@@ -10,6 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/6.1/ref/settings/
 """
 
+import sys
 from pathlib import Path
 
 import environ
@@ -25,10 +26,16 @@ environ.Env.read_env(BASE_DIR / ".env")
 # See https://docs.djangoproject.com/en/6.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = env("DJANGO_SECRET_KEY", default="dev-only-insecure-key-change-me")
+SECRET_KEY = env("DJANGO_SECRET_KEY", default="")
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = env("DEBUG")
+if not SECRET_KEY:
+    if not DEBUG and "pytest" not in sys.modules:
+        from django.core.exceptions import ImproperlyConfigured
+
+        raise ImproperlyConfigured("Set DJANGO_SECRET_KEY (or DEBUG=True for local development).")
+    SECRET_KEY = "dev-only-insecure-key"
 
 ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=["localhost", "127.0.0.1"])
 
@@ -125,11 +132,6 @@ STATIC_URL = 'static/'
 # Email
 # https://docs.djangoproject.com/en/6.1/topics/email/#topic-email-configuration
 
-MAILERS = {
-    'default': {
-        'BACKEND': 'django.core.mail.backends.console.EmailBackend',
-    },
-}
 
 # --- Fuel route planner -------------------------------------------------
 ORS_API_KEY = env("ORS_API_KEY", default="")
@@ -139,16 +141,22 @@ ORS_TIMEOUT_SECONDS = env.float("ORS_TIMEOUT_SECONDS", default=15.0)
 
 VEHICLE_TANK_GALLONS = 50.0
 VEHICLE_MPG = 10.0
+STOP_COST_USD = env.float("STOP_COST_USD", default=25.0)  # driver time + braking/idling per stop
 CORRIDOR_MILES = env.float("CORRIDOR_MILES", default=10.0)
 
 CACHES = {
     "default": {
         "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
         "TIMEOUT": 60 * 60 * 24,
+        "OPTIONS": {"MAX_ENTRIES": 200},  # a response with full geometry is ~0.5 MB
     }
 }
 
 REST_FRAMEWORK = {
     "DEFAULT_RENDERER_CLASSES": ["rest_framework.renderers.JSONRenderer",
                                  "rest_framework.renderers.BrowsableAPIRenderer"],
+    "EXCEPTION_HANDLER": "routing.views.api_exception_handler",
+    # Every new trip spends third-party routing quota.
+    "DEFAULT_THROTTLE_CLASSES": ["rest_framework.throttling.AnonRateThrottle"],
+    "DEFAULT_THROTTLE_RATES": {"anon": env("API_RATE_LIMIT", default="60/min")},
 }

@@ -8,5 +8,5 @@ urlpatterns = [
     path("admin/", admin.site.urls),
     path("api/route/", RoutePlanView.as_view(), name="route-plan"),
     path("map/", route_map, name="route-map"),
-    path("", RedirectView.as_view(url="/map/?start=New+York%2C+NY&finish=Los+Angeles%2C+CA")),
+    path("", RedirectView.as_view(url="/map/")),
 ]

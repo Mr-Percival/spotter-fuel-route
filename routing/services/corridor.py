@@ -41,7 +41,9 @@ def densify(coords_lonlat, step_miles: float = 1.0):
     seg = haversine_miles(lat[:-1], lon[:-1], lat[1:], lon[1:])
     n = np.maximum(1, np.ceil(seg / step_miles).astype(int))  # pieces per segment
     seg_idx = np.repeat(np.arange(len(seg)), n)
-    offsets = np.concatenate([np.arange(k) for k in n]) / np.repeat(n, n)
+    # position of each new point inside its segment: 0..n_k-1 (vectorised)
+    within = np.arange(n.sum()) - np.repeat(np.cumsum(n) - n, n)
+    offsets = within / np.repeat(n, n)
     out_lat = np.append(lat[seg_idx] + (lat[seg_idx + 1] - lat[seg_idx]) * offsets, lat[-1])
     out_lon = np.append(lon[seg_idx] + (lon[seg_idx + 1] - lon[seg_idx]) * offsets, lon[-1])
     cum_start = np.concatenate(([0.0], np.cumsum(seg)))
@@ -74,7 +76,8 @@ def stations_along_route(
             mile=float(cum[idx[s]] * scale),
             price=rec["price"],
             station_id=rec["opis_id"],
-            payload={**rec, "off_route_miles": round(float(chord_to_miles(dist[s])), 1)},
+            payload=rec,
+            off_route_miles=round(float(chord_to_miles(dist[s])), 1),
         ))
     out.sort(key=lambda r: r.mile)
     return out

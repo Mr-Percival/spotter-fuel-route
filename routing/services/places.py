@@ -114,3 +114,26 @@ def lookup(city: str, state: str) -> Place | None:
 def candidates(city: str) -> list[Place]:
     """All states that have a place with this name (for ambiguity messages)."""
     return sorted(_index()[1].get(normalize(city), []), key=lambda p: p.state)
+
+
+@lru_cache(maxsize=1)
+def _spatial():
+    """KD-tree over all US place points (3-D unit vectors), for 'is this lat/lon in the US?'."""
+    import numpy as np
+    from scipy.spatial import cKDTree
+
+    places = list(_index()[0].values())
+    lat = np.radians([p.lat for p in places])
+    lon = np.radians([p.lon for p in places])
+    xyz = np.column_stack((np.cos(lat) * np.cos(lon), np.cos(lat) * np.sin(lon), np.sin(lat)))
+    return places, cKDTree(xyz)
+
+
+def nearest_place(lat: float, lon: float) -> tuple[Place, float]:
+    """Closest Census place and its distance in miles."""
+    import math
+
+    places, tree = _spatial()
+    la, lo = math.radians(lat), math.radians(lon)
+    chord, i = tree.query([math.cos(la) * math.cos(lo), math.cos(la) * math.sin(lo), math.sin(la)])
+    return places[int(i)], 2 * 3958.8 * math.asin(min(1.0, chord / 2))

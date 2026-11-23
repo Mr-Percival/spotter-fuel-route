@@ -38,6 +38,11 @@ class InfeasibleFuelPlanError(PlannerError):
     code = "fuel_gap"
 
 
+class StationsNotLoadedError(PlannerError):
+    status_code = 503
+    code = "stations_not_loaded"
+
+
 class RoutingServiceError(PlannerError):
     status_code = 502
     code = "routing_service_error"

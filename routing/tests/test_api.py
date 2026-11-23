@@ -61,18 +61,84 @@ def test_plan_uses_exactly_one_routing_call(client):
     assert body["route"]["geometry"]["coordinates"] == ROUTE
     assert all(s["opis_id"] != 5 for s in body["fuel_stops"])
     assert body["map_url"].startswith("/map/?start=")
-    assert body["assumptions"]["initial_fuel_gallons"] == 50
+    assert body["assumptions"]["stop_cost_usd"] == 25
 
 
-def test_full_tank_and_cost_are_consistent(client):
+def test_default_plan_pays_for_the_whole_trip(client):
     with mock.patch("routing.services.ors_client.requests.post", return_value=ors_ok()):
         body = client.post(URL, {"start": "Oklahoma City, OK", "finish": "Memphis, TN"},
                            format="json").json()
     s = body["summary"]
-    # 559 mi with a 500 mi tank: ~6 gallons must be bought, at the cheapest reachable station.
-    assert s["gallons_purchased"] == pytest.approx(559.2 / 10 - 50, abs=0.05)
-    assert body["fuel_stops"][0]["opis_id"] == 2
-    assert s["total_cost"] == pytest.approx(s["gallons_purchased"] * 2.90, abs=0.02)
+    assert s["trip_fuel_gallons"] == pytest.approx(559.2 / 10, abs=0.05)
+    # Fuel to reach the first station + fuel bought at the stops = all the trip's fuel.
+    assert s["origin_fuel"]["gallons"] + s["gallons_bought_at_stops"] == pytest.approx(
+        s["trip_fuel_gallons"], abs=0.05)
+    assert s["total_cost"] == pytest.approx(
+        s["origin_fuel"]["cost"] + sum(f["cost"] for f in body["fuel_stops"]), abs=0.05)
+    assert s["total_cost"] > 0
+
+
+def test_fuel_already_in_the_tank_is_not_charged(client):
+    with mock.patch("routing.services.ors_client.requests.post", return_value=ors_ok()):
+        body = client.post(URL, {"start": "Oklahoma City, OK", "finish": "Memphis, TN",
+                                 "initial_fuel_gallons": 50}, format="json").json()
+    s = body["summary"]
+    assert s["origin_fuel"]["cost"] == 0
+    assert s["gallons_bought_at_stops"] == pytest.approx(559.2 / 10 - 50, abs=0.05)
+    assert body["fuel_stops"][0]["opis_id"] == 2  # cheapest reachable
+
+
+def test_short_trip_without_stations_on_route_and_map_render(client):
+    short = [[-97.5164, 35.4676], [-97.30, 35.46]]
+    with mock.patch("routing.services.ors_client.requests.post",
+                    return_value=ors_ok(distance_m=20_000.0, coords=short)):
+        body = client.post(URL, {"start": "Oklahoma City, OK", "finish": "Memphis, TN"},
+                           format="json").json()
+        page = client.get("/map/", {"start": "Oklahoma City, OK", "finish": "Memphis, TN"})
+    assert body["fuel_stops"] == [] and body["summary"]["total_cost"] > 0
+    assert "nearest station" in body["summary"]["origin_fuel"]["priced_at"]
+    assert page.status_code == 200
+
+
+def test_stop_cost_parameter_is_echoed_and_cached_separately(client):
+    payload = {"start": "Oklahoma City, OK", "finish": "Memphis, TN"}
+    with mock.patch("routing.services.ors_client.requests.post", return_value=ors_ok()) as post:
+        a = client.post(URL, payload, format="json").json()
+        b = client.post(URL, {**payload, "stop_cost_usd": 0}, format="json").json()
+    assert post.call_count == 2
+    assert a["assumptions"]["stop_cost_usd"] == 25 and b["assumptions"]["stop_cost_usd"] == 0
+    assert "stop_cost_usd=0" in b["map_url"]
+
+
+def test_same_start_and_finish_is_400_without_routing(client):
+    with mock.patch("routing.services.ors_client.requests.post") as post:
+        r = client.post(URL, {"start": "Dallas, TX", "finish": "dallas, texas"}, format="json")
+    assert r.status_code == 400
+    post.assert_not_called()
+
+
+def test_missing_station_data_is_503_without_routing(client):
+    Station.objects.all().delete()
+    reset_station_index()
+    with mock.patch("routing.services.ors_client.requests.post") as post:
+        r = client.post(URL, {"start": "Oklahoma City, OK", "finish": "Memphis, TN"}, format="json")
+    assert r.status_code == 503 and r.json()["error"]["code"] == "stations_not_loaded"
+    post.assert_not_called()
+
+
+def test_drf_errors_share_the_error_shape(client):
+    r = client.generic("POST", URL, "{not json", content_type="application/json")
+    assert r.status_code == 400 and "message" in r.json()["error"]
+    r = client.put(URL, {}, format="json")
+    assert r.status_code == 405 and r.json()["error"]["code"]
+
+
+def test_map_url_on_cache_hit_reflects_current_request(client):
+    with mock.patch("routing.services.ors_client.requests.post", return_value=ors_ok()):
+        client.post(URL, {"start": "oklahoma city, ok", "finish": "Memphis, TN"}, format="json")
+        r = client.post(URL, {"start": "Oklahoma City, OK", "finish": "Memphis, TN"}, format="json")
+    assert r.json()["meta"]["cache"] == "hit"
+    assert "Oklahoma+City" in r.json()["map_url"]
 
 
 def test_empty_tank_option_buys_everything(client):

@@ -12,7 +12,18 @@ import re
 from dataclasses import dataclass
 
 from .errors import AmbiguousLocationError, LocationError, UnroutableLocationError
-from .places import NOT_ROAD_CONNECTED, STATE_NAMES, US_STATES, candidates, lookup
+from .places import (
+    NOT_ROAD_CONNECTED,
+    STATE_NAMES,
+    US_STATES,
+    candidates,
+    lookup,
+    nearest_place,
+)
+
+# A point farther than this from every Census place is treated as outside the US
+# (the Census places + county subdivisions cover the country densely).
+MAX_MILES_FROM_US_PLACE = 25.0
 
 LATLON = re.compile(r"^\s*(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)\s*$")
 
@@ -38,11 +49,13 @@ def resolve(query: str) -> Location:
         lat, lon = float(m.group(1)), float(m.group(2))
         s, w, n, e = LOWER48_BBOX
         if not (s <= lat <= n and w <= lon <= e):
-            raise UnroutableLocationError(
-                f"{query} is outside the contiguous United States "
-                "(expected 'latitude,longitude', e.g. '40.71,-74.01')."
-            )
-        return Location(query, f"{lat:.4f}, {lon:.4f}", lat, lon)
+            hint = " Did you swap them? Use 'latitude,longitude'." if (s <= lon <= n and w <= lat <= e) else ""
+            raise LocationError(f"{query} is outside the contiguous United States.{hint}")
+        # The box also covers parts of Canada and Mexico: require a US place nearby.
+        place, miles = nearest_place(lat, lon)
+        if miles > MAX_MILES_FROM_US_PLACE or place.state not in US_STATES or place.state in NOT_ROAD_CONNECTED:
+            raise LocationError(f"{query} does not look like a location in the contiguous United States.")
+        return Location(query, f"{lat:.4f}, {lon:.4f} (near {place.name}, {place.state})", lat, lon)
 
     parts = [p.strip() for p in query.split(",") if p.strip()]
     if len(parts) >= 3 and parts[-1].upper() in {"USA", "US", "UNITED STATES"}:
