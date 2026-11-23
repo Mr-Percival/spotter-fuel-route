@@ -12,7 +12,7 @@
   ],
   "item": [
     {
-      "name": "1. New York -> Los Angeles (full tank)",
+      "name": "1. New York -> Los Angeles",
       "request": {
         "method": "POST",
         "header": [
