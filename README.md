@@ -1,5 +1,7 @@
 # Fuel Route Planner
 
+[![tests](https://github.com/Mr-Percival/spotter-fuel-route/actions/workflows/ci.yml/badge.svg)](https://github.com/Mr-Percival/spotter-fuel-route/actions/workflows/ci.yml) ![Django 6.1](https://img.shields.io/badge/Django-6.1-092E20) ![Python 3.12](https://img.shields.io/badge/Python-3.12-3776AB)
+
 A Django REST API that takes a start and a finish location in the USA and returns:
 
 - the driving route (GeoJSON) and a link to an interactive map,
@@ -187,4 +189,4 @@ scripts/                    one-off data preparation (Gazetteer build, road snap
 data/                       assessment CSV + derived, committed data
 ```
 
-Data sources: the assessment's fuel price CSV and the US Census Bureau (Gazetteer 2025, Geocoder; public domain). Routing and road snapping by © openrouteservice.org / OpenStreetMap contributors.
+Code: MIT licence (see `LICENSE`). Data sources: the assessment's fuel price CSV and the US Census Bureau (Gazetteer 2025, Geocoder; public domain). Routing and road snapping by © openrouteservice.org / OpenStreetMap contributors.
