@@ -162,5 +162,33 @@ def plan_fuel_stops(
     return FuelPlan(stops, total, bought, _initial(tank_gallons, initial_gallons), total_miles)
 
 
+def naive_plan_cost(
+    stations: Sequence[RouteStation],
+    total_miles: float,
+    *,
+    tank_gallons: float = 50.0,
+    mpg: float = 10.0,
+    initial_gallons: float | None = None,
+) -> float:
+    """Baseline a driver without price data would follow: keep driving and only
+    stop when the next station would be out of reach, then fill up (never buying
+    more than needed to finish). Used to report the optimiser's savings.
+
+    Assumes the trip is feasible (call it after ``plan_fuel_stops`` succeeded).
+    """
+    fuel = _initial(tank_gallons, initial_gallons)
+    pos, cost = 0.0, 0.0
+    route = sorted((s for s in stations if 0 <= s.mile <= total_miles), key=lambda s: s.mile)
+    for k, s in enumerate(route):
+        fuel -= (s.mile - pos) / mpg
+        pos = s.mile
+        nxt = route[k + 1].mile if k + 1 < len(route) else total_miles
+        if (nxt - pos) / mpg > fuel + EPS:
+            buy = min(tank_gallons - fuel, (total_miles - pos) / mpg - fuel)
+            cost += buy * s.price
+            fuel += buy
+    return cost
+
+
 def _initial(tank_gallons: float, initial_gallons: float | None) -> float:
     return tank_gallons if initial_gallons is None else float(initial_gallons)
