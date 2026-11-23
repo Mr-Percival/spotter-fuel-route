@@ -19,6 +19,13 @@ application = get_wsgi_application()
 # Build the in-memory place and station indexes when the server starts, so the
 # first request doesn't pay for it (management commands never import this file).
 try:
+    from django.conf import settings
+
+    if settings.BOOTSTRAP_DB_ON_START:
+        from routing.bootstrap import ensure_stations_loaded
+
+        ensure_stations_loaded()
+
     from routing.services.places import _index as _places_index
     from routing.services.stations import get_station_index
 

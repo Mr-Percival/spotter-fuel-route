@@ -10,6 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/6.1/ref/settings/
 """
 
+import os
 import sys
 from pathlib import Path
 
@@ -37,7 +38,15 @@ if not SECRET_KEY:
         raise ImproperlyConfigured("Set DJANGO_SECRET_KEY (or DEBUG=True for local development).")
     SECRET_KEY = "dev-only-insecure-key"
 
-ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=["localhost", "127.0.0.1"])
+# Vercel sets VERCEL=1. Its functions have a read-only filesystem except /tmp.
+ON_VERCEL = bool(os.environ.get("VERCEL"))
+
+ALLOWED_HOSTS = env.list(
+    "ALLOWED_HOSTS",
+    default=["localhost", "127.0.0.1"] + ([".vercel.app"] if ON_VERCEL else []),
+)
+if ON_VERCEL:
+    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
 
 # Application definition
@@ -88,8 +97,15 @@ WSGI_APPLICATION = 'config.wsgi.application'
 
 DATABASES = {
     # SQLite by default; set DATABASE_URL=postgres://... to use PostgreSQL.
-    "default": env.db("DATABASE_URL", default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}"),
+    "default": env.db(
+        "DATABASE_URL",
+        default="sqlite:////tmp/db.sqlite3" if ON_VERCEL else f"sqlite:///{BASE_DIR / 'db.sqlite3'}",
+    ),
 }
+
+# Migrate and load the stations when a server instance starts (config/wsgi.py).
+# Used on Vercel, where the SQLite file in /tmp starts empty on every cold start.
+BOOTSTRAP_DB_ON_START = env.bool("BOOTSTRAP_DB_ON_START", default=ON_VERCEL)
 
 
 # Password validation
@@ -127,6 +143,7 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/6.1/howto/static-files/
 
 STATIC_URL = 'static/'
+STATIC_ROOT = BASE_DIR / "staticfiles"  # collectstatic target (Vercel runs it at build time)
 
 
 # Email
