@@ -10,6 +10,8 @@ A Django REST API that takes a start and a finish location in the USA and return
 
 It makes **one call** to the routing API per trip (OpenRouteService). Repeated trips are served from cache.
 
+**Live demo** (Vercel): [map, New York → Los Angeles](https://spotter-fuel-route-psi.vercel.app/map/?start=New%20York,%20NY&finish=Los%20Angeles,%20CA) · API at `https://spotter-fuel-route-psi.vercel.app/api/route/`. The first request after a quiet period takes a few seconds while the instance loads the stations.
+
 ```
 POST /api/route/   {"start": "New York, NY", "finish": "Los Angeles, CA"}
 
